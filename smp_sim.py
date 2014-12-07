@@ -46,9 +46,48 @@ YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES."""
 
+def select_best()
+
+def reject(group, proposals, data):
+    rejects = []
+    for member in group:
+        if member in proposals and len(proposals[member]) > 1:
+            # If member has been proposed to by more than one...
+            select_best(member, proposals[member], data[member])
+            
+    return
+
+def propose(group, data):
+    new_proposals = {}
+    for member in group:
+        index = data[member]['index']
+        candidate = data[member]['priList'][index]
+        if candidate in new_proposals:
+            # candidate has multiple proposals...
+            new_proposals[candidate].append(member)
+        else:
+            # candidate is receiving first proposal...
+            new_proposals[candidate] = [member]
+    return new_proposals
+
+def simulate(groupA, groupB, dataDictionary):
+
+    # Start off with all members of groupA treated as rejected,
+    # and no proposals.
+    #stable = FALSE
+    rejects = groupA
+    proposals = {}
+    
+    #while not stable:
+    proposals.update(propose(rejects, dataDictionary))
+    rejects = reject(groupB, proposals, dataDictionary)
+    #stable = check_stability(rejects, dataDictionary)
+    pp.pprint(proposals)
+    return
+
 # Grenerate Priority Lists and other initial values
 # and stuff them into a dictionary.
-def generate_pLists(master, listA, listB):
+def generate_priorities(master, listA, listB):
     """Create priority lists for every member in master. Priority lists consist
     of only members of the opposite group. Prioritization is random. Add the list,
     initial list index, and initial partner (-1 == no partner) to a dictionary for
@@ -95,15 +134,15 @@ def setup_sim(n=0):
     aList = [x for x in mList if x%2 == 0]
     bList = [x for x in mList if x%2 == 1]
 
-    print('Group A:', aList)
-    print('Group B:', bList)
+    pp.pprint(aList)
+    pp.pprint(bList)
 
     # Grenerate Priority Lists and other initial values
     # and stuff them into a dictionary.
-    mDict = generate_pLists(mList, aList, bList)
+    mDict = generate_priorities(mList, aList, bList)
 
-    print(mDict)
-    return mDict
+    pp.pprint(mDict)
+    return aList, bList, mDict
 
 
 parser = argparse.ArgumentParser(description=description_string)
@@ -113,5 +152,8 @@ parser.add_argument('-w', '--warranty', action='store_true', help='Show software
 parser.add_argument('-c', '--conditions', action='store_true', help='Show software distribution details.')
 args = parser.parse_args()
 
+pp = pprint.PrettyPrinter(indent=4)
+
 #print(args)
-setup_sim(args.count)
+groupA, groupB, dataDictionary = setup_sim(args.count)
+simulate(groupA, groupB, dataDictionary)
