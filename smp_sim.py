@@ -1,5 +1,6 @@
 import argparse
 import pprint
+import random
 
 description_string = """Stable Marriage Problem Simulator version 1, Copyright (C) 2014 Kevin Peizner
     Stable Marriage Problem Simulator comes with ABSOLUTELY NO WARRANTY; for details type `%(prog)s -w'.
@@ -45,9 +46,72 @@ YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES."""
 
+# Grenerate Priority Lists and other initial values
+# and stuff them into a dictionary.
+def generate_pLists(master, listA, listB):
+    """Create priority lists for every member in master. Priority lists consist
+    of only members of the opposite group. Prioritization is random. Add the list,
+    initial list index, and initial partner (-1 == no partner) to a dictionary for
+    each member.
+
+    Returns a dictionary of this format:
+    {MEMBER#: {'priList':LIST, 'partner': -1, 'index':0}}"""
+    mDict = {}
+    for member in master:
+        if(member%2 == 0):
+            # Memeber is from list A. Prioritize list B.
+            shuffled = sorted(listB, key=lambda k: random.random())
+        else:
+            # Member is from list B. Prioritzie list A.
+            shuffled = sorted(listA, key=lambda k: random.random())
+        mDict[member] = {'priList':shuffled, 'partner':-1, 'index':0}
+
+    # Sanity check
+    if len(mDict) != len(master):
+        return -1
+    else:
+        return mDict
+
+# Odd numbers represent group A.
+# Even numbers represent group B.
+# Every pair will consist of one member
+# from group A and one member from group B.
+def setup_sim(n=0):
+    """Based on input N, create a list of integers. If N is odd, use N+1.
+    Group odd integers into group A, and even integers into group B.
+    Generate priority lists for all members of both groups, such that the
+    priority list for a given member is a ranked list of the memebers of the
+    opposite group."""
+
+    if n == 0:
+        print('ERROR: Nothing to do. Sample size is', n)
+        return # Error, nothing to do.
+    if (n % 2) == 1:
+        n+=1
+        print('INFO: Sample size has been modified to', n)
+
+    # Generate Lists.
+    mList = range(n)
+    aList = [x for x in mList if x%2 == 0]
+    bList = [x for x in mList if x%2 == 1]
+
+    print('Group A:', aList)
+    print('Group B:', bList)
+
+    # Grenerate Priority Lists and other initial values
+    # and stuff them into a dictionary.
+    mDict = generate_pLists(mList, aList, bList)
+
+    print(mDict)
+    return mDict
+
+
 parser = argparse.ArgumentParser(description=description_string)
 parser.add_argument('count', metavar='N', type=int, help='Number of people to simulate in a simulation.')
 parser.add_argument('-s', '--step', action='store_true', help='Step through the simulation, pausing after each iteration.')
 parser.add_argument('-w', '--warranty', action='store_true', help='Show software warranty details.')
 parser.add_argument('-c', '--conditions', action='store_true', help='Show software distribution details.')
-parser.parse_args()
+args = parser.parse_args()
+
+#print(args)
+setup_sim(args.count)
