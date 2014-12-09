@@ -47,74 +47,79 @@ YOU OR THIRD PARTIES OR A FAILURE OF THE PROGRAM TO OPERATE WITH ANY OTHER
 PROGRAMS), EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGES."""
 
-def select_best(member, cadidates, data):
+def select_best(b, cadidates, data):
     #pdb.set_trace()
     pList = data['priList']
-    partner = data['partner']
-    index = data['index']
+    fiance = data['fiance']
+    rank = data['f_rank']
 
     # Iterate through cadidates, finding the best one.
     tossed = []
     for c in cadidates:
         # First time member has received a proposal, just accept it.
-        if(index == -1):
-            partner = c
-            index = pList.index(c)
+        if(fiance == -1):
+            fiance = c
+            rank = pList.index(c)
             continue
         try:
-            # Try to limit our search to only better cadidates.
-            pri = pList.index(c, 0, index)
+            # Try to limit our search to only better cadidates: [0, rank).
+            r = pList.index(c, 0, rank)
         except ValueError:
             # c is not a better cadidate, toss.
             tossed.append(c)
             continue
         else:
             # Trade up!
-            if(pri < index):
-                tossed.append(partner)
-                partner = c
-                index = pri
+            if(r < rank):
+                tossed.append(fiance)
+                fiance = c
+                rank = r
             else:
                 # Should not be here, ValueError should have caught this case.
                 assert 0
     
-    return partner, index, tossed
+    return fiance, rank, tossed
 
 def reject(group, proposals, data):
     rejects = []
-    for member in group:
-        if member in proposals:# and len(proposals[member]) > 1:
-            # If member has been proposed to by more than one...
-            best, i, rejected = select_best(member, proposals[member], data[member])
-            data[member]['partner'] = best
-            data[member]['index'] = i
-            data[best]['partner'] = member
+    for b in group:
+        if b in proposals:# and len(proposals[b]) > 1:
+            # If b has been proposed to, pick the best...
+            best, rank, rejected = select_best(b, proposals[b], data[b])
+
+            # Update data structure.
+            data[b]['fiance'] = best
+            data[b]['f_rank'] = rank
+            data[best]['fiance'] = b
+            data[best]['f_rank'] = data[best]['priList'].index(b)
             
             rejects += rejected
+            
+    # All the rejected As, move on to the next cadidate...
+    for a in rejects:
+            data[a]['f_rank']+=1
+            
     return data, rejects
 
 def propose(group, data):
     new_proposals = {}
-    for member in group:
-        index = data[member]['index']
-        if index == -1:
-            index = 0
-        candidate = data[member]['priList'][index]
-        if candidate in new_proposals:
-            # candidate has multiple proposals...
-            new_proposals[candidate].append(member)
+    for a in group:
+        index = data[a]['f_rank']
+        desired = data[a]['priList'][index]
+        if desired in new_proposals:
+            # desired has multiple proposals, add self to list of choices...
+            new_proposals[desired].append(a)
         else:
-            # candidate is receiving first proposal...
-            new_proposals[candidate] = [member]
+            # desired is receiving first proposal...
+            new_proposals[desired] = [a]
     return new_proposals
 
 def simulate(groupA, groupB, dataDictionary):
 
     # Start off with all members of groupA treated as rejected,
     # and no proposals.
-    #stable = FALSE
-    # groupA is even
-    # groupB is odd
+    # groupA is even #s
+    # groupB is odd #s
     rejects = groupA
     proposals = {}
     
@@ -125,6 +130,16 @@ def simulate(groupA, groupB, dataDictionary):
     #stable = check_stability(rejects, dataDictionary)
     pp.pprint(dataDictionary)
     pp.pprint(rejects)
+
+    print('#################################')
+
+    while rejects:
+        proposals = propose(rejects, dataDictionary)
+        pp.pprint(proposals)
+        dataDictionary, rejects = reject(groupB, proposals, dataDictionary)
+        #stable = check_stability(rejects, dataDictionary)
+        pp.pprint(dataDictionary)
+        pp.pprint(rejects)
     
     return
 
@@ -133,11 +148,11 @@ def simulate(groupA, groupB, dataDictionary):
 def generate_priorities(master, listA, listB):
     """Create priority lists for every member in master. Priority lists consist
     of only members of the opposite group. Prioritization is random. Add the list,
-    initial list index, and initial partner (-1 == no partner) to a dictionary for
+    initial list index, and initial fiance (-1 == no fiance) to a dictionary for
     each member.
 
     Returns a dictionary of this format:
-    {MEMBER#: {'priList':LIST, 'partner': -1, 'index':0}}"""
+    {MEMBER#: {'priList':LIST, 'fiance': -1, 'f_rank':0}}"""
     mDict = {}
     for member in master:
         if(member%2 == 0):
@@ -146,7 +161,7 @@ def generate_priorities(master, listA, listB):
         else:
             # Member is from list B. Prioritzie list A.
             shuffled = sorted(listA, key=lambda k: random.random())
-        mDict[member] = {'priList':shuffled, 'partner':-1, 'index':-1}
+        mDict[member] = {'priList':shuffled, 'fiance':-1, 'f_rank':0}
 
     # Sanity check
     if len(mDict) != len(master):
