@@ -56,6 +56,11 @@ def select_best(member, cadidates, data):
     # Iterate through cadidates, finding the best one.
     tossed = []
     for c in cadidates:
+        # First time member has received a proposal, just accept it.
+        if(index == -1):
+            partner = c
+            index = pList.index(c)
+            continue
         try:
             # Try to limit our search to only better cadidates.
             pri = pList.index(c, 0, index)
@@ -64,12 +69,8 @@ def select_best(member, cadidates, data):
             tossed.append(c)
             continue
         else:
-            # First time member has received a proposal, just accept it.
-            if(index == -1):
-                partner = c
-                index = pri
             # Trade up!
-            elif(pri < index):
+            if(pri < index):
                 tossed.append(partner)
                 partner = c
                 index = pri
@@ -87,7 +88,7 @@ def reject(group, proposals, data):
             best, i, rejected = select_best(member, proposals[member], data[member])
             data[member]['partner'] = best
             data[member]['index'] = i
-            #data[best]['partner'] = member
+            data[best]['partner'] = member
             
             rejects += rejected
     return data, rejects
@@ -96,6 +97,8 @@ def propose(group, data):
     new_proposals = {}
     for member in group:
         index = data[member]['index']
+        if index == -1:
+            index = 0
         candidate = data[member]['priList'][index]
         if candidate in new_proposals:
             # candidate has multiple proposals...
@@ -110,6 +113,8 @@ def simulate(groupA, groupB, dataDictionary):
     # Start off with all members of groupA treated as rejected,
     # and no proposals.
     #stable = FALSE
+    # groupA is even
+    # groupB is odd
     rejects = groupA
     proposals = {}
     
