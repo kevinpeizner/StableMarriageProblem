@@ -62,7 +62,8 @@ def select_best(b, cadidates, data):
             rank = pList.index(c)
             continue
         try:
-            # Try to limit our search to only better cadidates: [0, rank).
+            # Try to limit our search to only better
+            # cadidates to improve speed: [0, rank).
             r = pList.index(c, 0, rank)
         except ValueError:
             # c is not a better cadidate, toss.
@@ -122,25 +123,23 @@ def simulate(groupA, groupB, dataDictionary):
     # groupB is odd #s
     rejects = groupA
     proposals = {}
-    
-    #while rejects:
-    proposals.update(propose(rejects, dataDictionary))
-    pp.pprint(proposals)
-    dataDictionary, rejects = reject(groupB, proposals, dataDictionary)
-    #stable = check_stability(rejects, dataDictionary)
-    pp.pprint(dataDictionary)
-    pp.pprint(rejects)
 
-    print('#################################')
-
+    i = 0
     while rejects:
+        print('ITERATION: ', i)
         proposals = propose(rejects, dataDictionary)
+        print('New Proposals:', end=' ')
         pp.pprint(proposals)
         dataDictionary, rejects = reject(groupB, proposals, dataDictionary)
-        #stable = check_stability(rejects, dataDictionary)
-        pp.pprint(dataDictionary)
+        #pp.pprint(dataDictionary)
+        print('Rejects:', end=' ')
         pp.pprint(rejects)
-    
+        print('-------------------------------------------------')
+        i+=1
+
+    print('Final Results:')
+    pp.pprint(dataDictionary)
+    print('Total Iterations: ', i)
     return
 
 # Grenerate Priority Lists and other initial values
@@ -192,9 +191,6 @@ def setup_sim(n=0):
     aList = [x for x in mList if x%2 == 0]
     bList = [x for x in mList if x%2 == 1]
 
-    pp.pprint(aList)
-    pp.pprint(bList)
-
     # Grenerate Priority Lists and other initial values
     # and stuff them into a dictionary.
     mDict = generate_priorities(mList, aList, bList)
@@ -203,6 +199,9 @@ def setup_sim(n=0):
     return aList, bList, mDict
 
 
+
+
+# Setup argparse and get args...
 parser = argparse.ArgumentParser(description=description_string)
 parser.add_argument('count', metavar='N', type=int, help='Number of people to simulate in a simulation.')
 parser.add_argument('-s', '--step', action='store_true', help='Step through the simulation, pausing after each iteration.')
@@ -210,8 +209,9 @@ parser.add_argument('-w', '--warranty', action='store_true', help='Show software
 parser.add_argument('-c', '--conditions', action='store_true', help='Show software distribution details.')
 args = parser.parse_args()
 
+# Setup PrettyPrinter
 pp = pprint.PrettyPrinter(indent=4)
 
-#print(args)
+# Run all the things!
 groupA, groupB, dataDictionary = setup_sim(args.count)
 simulate(groupA, groupB, dataDictionary)
